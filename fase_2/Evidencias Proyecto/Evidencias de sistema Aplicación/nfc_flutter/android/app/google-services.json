@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1065241435557",
+    "project_id": "nfc-scanner-316c4",
+    "storage_bucket": "nfc-scanner-316c4.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1065241435557:android:ae82e6d1b878405421dc4c",
+        "android_client_info": {
+          "package_name": "com.example.appNfcScan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDiFmnIZ6SZLzgpO4COy3F_ou4iymBc5_0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
