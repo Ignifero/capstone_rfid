@@ -13,6 +13,8 @@ import 'views/screen/inventario.dart';
 import 'views/screen/scanner.dart';
 import 'views/screen/sincronizar.dart';
 import 'firebase_options.dart'; // Asegúrate de que esta línea esté presente
+import 'package:nfc_flutter/business_logic/service/firestore_service.dart';
+import 'package:nfc_flutter/viewmodels/inventario_viewmodel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +33,11 @@ void main() async {
         ChangeNotifierProvider(
             create: (context) =>
                 AuthViewModel(AuthUseCase(context.read<AuthService>()))),
+        Provider(create: (_) => FirestoreService()), // Servicio Firestore
+        ChangeNotifierProvider(
+          create: (context) =>
+              InventarioViewModel(context.read<FirestoreService>()),
+        ),
       ],
       child: MyApp(),
     ),
