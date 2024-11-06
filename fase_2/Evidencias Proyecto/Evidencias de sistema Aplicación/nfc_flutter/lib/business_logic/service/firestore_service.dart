@@ -1,29 +1,28 @@
-// business_logic/service/firestore_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:nfc_flutter/business_logic/models/produc_model.dart';
 
 class FirestoreService {
-  final CollectionReference _inventarioCollection =
+  final CollectionReference _productCollection =
       FirebaseFirestore.instance.collection('inventario');
 
-  // Obtener todos los items de inventario
-  Stream<List<Map<String, dynamic>>> getInventario() {
-    return _inventarioCollection.snapshots().map((snapshot) => snapshot.docs
-        .map((doc) => doc.data() as Map<String, dynamic>)
-        .toList());
+  Future<List<ProductModel>> getInventory() async {
+    final querySnapshot = await _productCollection.get();
+    return querySnapshot.docs
+        .map((doc) =>
+            ProductModel.fromJson(doc.id, doc.data() as Map<String, dynamic>))
+        .toList();
   }
 
-  // Crear nuevo item de inventario
-  Future<void> addItem(Map<String, dynamic> data) async {
-    await _inventarioCollection.add(data);
+  Future<bool> checkIfProductExists(String id) async {
+    final doc = await _productCollection.doc(id).get();
+    return doc.exists;
   }
 
-  // Actualizar item existente
-  Future<void> updateItem(String id, Map<String, dynamic> data) async {
-    await _inventarioCollection.doc(id).update(data);
+  Future<void> addProduct(ProductModel producto) async {
+    await _productCollection.doc(producto.id).set(producto.toJson());
   }
 
-  // Eliminar item
-  Future<void> deleteItem(String id) async {
-    await _inventarioCollection.doc(id).delete();
+  Future<void> deleteProduct(String id) async {
+    await _productCollection.doc(id).delete();
   }
 }

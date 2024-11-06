@@ -22,7 +22,7 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> login(String email, String password) async {
+  Future<User?> login(String email, String password) async {
     try {
       _user = await _authUseCase.login(email, password);
 
@@ -32,19 +32,19 @@ class AuthViewModel extends ChangeNotifier {
       }
 
       notifyListeners();
+      return _user; // Devolver el usuario para manejarlo en la pantalla
     } catch (e) {
-      print('Error al iniciar sesión: $e');
-      rethrow; // Vuelve a lanzar la excepción para que el manejador la capture
+      throw e; // Volver a lanzar la excepción para manejarla en la pantalla
     }
   }
 
-  Future<void> register(String email, String password) async {
+  Future<User?> register(String email, String password) async {
     try {
       _user = await _authUseCase.register(email, password);
       notifyListeners();
+      return _user; // Devolver el usuario para manejarlo en la pantalla
     } catch (e) {
-      print('Error al registrar usuario: $e');
-      rethrow;
+      throw e; // Volver a lanzar la excepción para manejarla en la pantalla
     }
   }
 }

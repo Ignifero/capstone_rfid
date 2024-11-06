@@ -1,33 +1,31 @@
-// business_logic/view_model/inventario_view_model.dart
 import 'package:flutter/material.dart';
 import 'package:nfc_flutter/business_logic/service/firestore_service.dart';
+import 'package:nfc_flutter/business_logic/models/produc_model.dart';
 
 class InventarioViewModel extends ChangeNotifier {
-  final FirestoreService _firestoreService;
-  List<Map<String, dynamic>> _inventario = [];
+  final FirestoreService firestoreService;
+  List<ProductModel> inventario = [];
 
-  InventarioViewModel(this._firestoreService) {
-    _fetchInventario();
+  InventarioViewModel(this.firestoreService);
+
+  Future<void> fetchInventory() async {
+    inventario = await firestoreService.getInventory();
+    notifyListeners();
   }
 
-  List<Map<String, dynamic>> get inventario => _inventario;
-
-  void _fetchInventario() {
-    _firestoreService.getInventario().listen((inventarioData) {
-      _inventario = inventarioData;
-      notifyListeners();
-    });
+  Future<bool> checkIfExists(String id) async {
+    return await firestoreService.checkIfProductExists(id);
   }
 
-  Future<void> addItem(Map<String, dynamic> data) async {
-    await _firestoreService.addItem(data);
-  }
-
-  Future<void> updateItem(String id, Map<String, dynamic> data) async {
-    await _firestoreService.updateItem(id, data);
+  Future<void> addItem(ProductModel producto) async {
+    await firestoreService.addProduct(producto);
+    inventario.add(producto);
+    notifyListeners();
   }
 
   Future<void> deleteItem(String id) async {
-    await _firestoreService.deleteItem(id);
+    await firestoreService.deleteProduct(id);
+    inventario.removeWhere((producto) => producto.id == id);
+    notifyListeners();
   }
 }

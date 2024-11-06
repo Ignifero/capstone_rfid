@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:nfc_flutter/views/screen/inventario.dart';
+import 'package:nfc_flutter/views/screen/inventario_screen.dart';
 import 'package:nfc_flutter/views/screen/scanner.dart';
 import 'package:nfc_flutter/views/screen/sincronizar.dart';
 import 'package:nfc_flutter/views/screen/settings_screen.dart';

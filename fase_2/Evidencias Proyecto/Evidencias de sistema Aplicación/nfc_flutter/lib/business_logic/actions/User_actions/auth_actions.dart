@@ -9,12 +9,20 @@ class AuthUseCase {
 
   Stream<User?> get authStateChanges => _authService.authStateChanges;
 
-  Future<User?> login(String email, String password) {
-    return _authService.loginWithEmail(email, password);
+  Future<User?> login(String email, String password) async {
+    try {
+      return await _authService.loginWithEmail(email, password);
+    } catch (e) {
+      throw e; // Propaga el error para que el ViewModel pueda capturarlo y mostrar el mensaje en la vista
+    }
   }
 
-  Future<User?> register(String email, String password) {
-    return _authService.registerWithEmail(email, password);
+  Future<User?> register(String email, String password) async {
+    try {
+      return await _authService.registerWithEmail(email, password);
+    } catch (e) {
+      throw e; // Propaga el error
+    }
   }
 
   Future<void> signOut() async {

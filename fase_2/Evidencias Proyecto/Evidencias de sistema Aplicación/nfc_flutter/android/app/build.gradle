@@ -24,20 +24,29 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.nfc_flutter"
+        applicationId "com.example.appNfcScan"  // Cambiado para que coincida con el archivo JSON
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdkVersion 26  // Cambiado a 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        release {
+            storeFile file("C:/proyectonfc/my-release-key.jks") // Ruta de tu archivo .jks
+            storePassword "12345678"  // Contraseña de tu keystore
+            keyAlias "my-key"  // Alias de tu clave
+            keyPassword "12345678"  // Contraseña de la clave
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            signingConfig signingConfigs.release  // Usa la configuración de firma de release
+            minifyEnabled false  // Si deseas habilitar minificación, cambia a 'true'
+            shrinkResources false  // Si deseas habilitar la reducción de recursos, cambia a 'true'
         }
     }
 }

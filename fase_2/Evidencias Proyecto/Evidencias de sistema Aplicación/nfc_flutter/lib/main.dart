@@ -9,7 +9,7 @@ import 'views/screen/home_screen.dart';
 import 'views/screen/login_screen.dart';
 import 'views/screen/register_screen.dart';
 import 'views/screen/inicio_screen.dart';
-import 'views/screen/inventario.dart';
+import 'views/screen/inventario_screen.dart';
 import 'views/screen/scanner.dart';
 import 'views/screen/sincronizar.dart';
 import 'firebase_options.dart'; // Asegúrate de que esta línea esté presente
