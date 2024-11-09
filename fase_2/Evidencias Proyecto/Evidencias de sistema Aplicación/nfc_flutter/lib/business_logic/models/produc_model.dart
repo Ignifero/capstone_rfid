@@ -1,33 +1,34 @@
+// business_logic/models/produc_model.dart
 class ProductModel {
-  final String id;
   final String nombre;
+  final String etiquetaId;
   final int cantidad;
   final String ubicacion;
 
   ProductModel({
-    required this.id,
     required this.nombre,
+    required this.etiquetaId,
     required this.cantidad,
     required this.ubicacion,
   });
 
-  // Método para convertir el modelo a un JSON para Firestore
-  Map<String, dynamic> toJson() {
+  // Convertir el mapa en un objeto ProductModel
+  factory ProductModel.fromMap(Map<String, dynamic> map) {
+    return ProductModel(
+      nombre: map['nombre'] ?? 'Sin nombre',
+      etiquetaId: map['etiquetaId'] ?? 'Sin etiqueta',
+      cantidad: map['cantidad'] ?? 0,
+      ubicacion: map['ubicacion'] ?? 'Sin ubicación',
+    );
+  }
+
+  // Convertir el objeto ProductModel a un mapa
+  Map<String, dynamic> toMap() {
     return {
-      'id': id,
       'nombre': nombre,
+      'etiquetaId': etiquetaId,
       'cantidad': cantidad,
       'ubicacion': ubicacion,
     };
-  }
-
-  // Método para crear un modelo a partir de un JSON de Firestore
-  factory ProductModel.fromJson(String id, Map<String, dynamic> json) {
-    return ProductModel(
-      id: id,
-      nombre: json['nombre'] ?? '',
-      cantidad: json['cantidad'] ?? 0,
-      ubicacion: json['ubicacion'] ?? '',
-    );
   }
 }

@@ -7,50 +7,31 @@ class InventarioScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Accediendo al InventarioViewModel
     final inventarioViewModel = Provider.of<InventarioViewModel>(context);
 
-    Future.delayed(Duration.zero, () async {
-      await inventarioViewModel.fetchInventory();
-    });
-
     return Scaffold(
-      appBar: AppBar(title: const Text('Inventario')),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Lista de productos en el inventario.',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: inventarioViewModel.inventario.length,
-              itemBuilder: (context, index) {
-                final item = inventarioViewModel.inventario[index];
-                return ListTile(
-                  title: Text(item.nombre),
-                  subtitle: Text(
-                      'Cantidad: ${item.cantidad} - Ubicación: ${item.ubicacion}'),
-                  trailing: IconButton(
-                    icon: Icon(Icons.delete),
-                    onPressed: () {
-                      inventarioViewModel.deleteItem(item.id);
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+      appBar: AppBar(
+        title: const Text('Inventario'),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Navegar a la pantalla de escaneo
-          Navigator.pushNamed(context, '/scanner');
-        },
-        child: const Icon(Icons.add),
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: inventarioViewModel.items.isEmpty
+            ? const Center(child: Text('No hay productos en el inventario.'))
+            : ListView.builder(
+                itemCount: inventarioViewModel.items.length,
+                itemBuilder: (context, index) {
+                  final producto = inventarioViewModel.items[index];
+                  return ListTile(
+                    title: Text(producto.nombre),
+                    subtitle: Text('Cantidad: ${producto.cantidad}'),
+                    trailing: Text('Ubicación: ${producto.ubicacion}'),
+                    onTap: () {
+                      // Aquí puedes agregar lógica adicional si es necesario
+                    },
+                  );
+                },
+              ),
       ),
     );
   }

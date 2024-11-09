@@ -4,22 +4,35 @@ import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 import 'package:nfc_flutter/viewmodels/inventario_viewmodel.dart';
 import 'package:nfc_flutter/business_logic/models/produc_model.dart';
 
-class ScannerScreen extends StatelessWidget {
+class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
+
+  @override
+  _ScannerScreenState createState() => _ScannerScreenState();
+}
+
+class _ScannerScreenState extends State<ScannerScreen> {
+  bool _isScanning = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Escanear')),
+      appBar: AppBar(title: const Text('Escanear NFC')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ElevatedButton(
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all(
+                    _isScanning ? Colors.green : Colors.blue),
+              ),
               onPressed: () async {
                 await _scanNFC(context);
               },
-              child: const Text('Escanear NFC'),
+              child: _isScanning
+                  ? const Text('Escaneando NFC...')
+                  : const Text('Escanear NFC'),
             ),
           ],
         ),
@@ -27,7 +40,12 @@ class ScannerScreen extends StatelessWidget {
     );
   }
 
+  // Función para manejar el escaneo NFC
   Future<void> _scanNFC(BuildContext context) async {
+    setState(() {
+      _isScanning = true;
+    });
+
     bool hasNFC = false;
 
     try {
@@ -44,6 +62,9 @@ class ScannerScreen extends StatelessWidget {
     if (!hasNFC) {
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Este dispositivo no soporta NFC.')));
+      setState(() {
+        _isScanning = false;
+      });
       return;
     }
 
@@ -64,24 +85,30 @@ class ScannerScreen extends StatelessWidget {
 
     try {
       final tag = await FlutterNfcKit.poll();
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(); // Cerrar el diálogo de carga
 
-      if (tag != null) {
+      if (tag != null && tag.id.isNotEmpty) {
         final inventarioViewModel =
             Provider.of<InventarioViewModel>(context, listen: false);
-        bool exists = await inventarioViewModel.checkIfExists(tag.id);
+        bool exists = await inventarioViewModel.checkIfProductExists(tag.id);
 
         if (exists) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content:
                   Text('La etiqueta ya está registrada en el inventario.')));
-          print('Etiqueta NFC ya registrada.');
         } else {
-          _showAddProductDialog(context, tag.id);
-          print('Etiqueta NFC escaneada: ${tag.id}');
+          final product = await _showAddProductDialog(context, tag.id);
+          if (product != null) {
+            await inventarioViewModel.addProduct(product);
+            ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Producto agregado exitosamente')));
+          }
         }
       } else {
         print("No se encontró etiqueta NFC.");
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content:
+                Text('No se pudo leer la etiqueta NFC. Intente nuevamente.')));
       }
     } catch (e) {
       print('Error leyendo NFC: $e');
@@ -89,65 +116,69 @@ class ScannerScreen extends StatelessWidget {
           content: Text('Error al leer la etiqueta NFC. Intente nuevamente.')));
     } finally {
       await FlutterNfcKit.finish();
+      setState(() {
+        _isScanning = false; // Revertir el estado después de intentar escanear
+      });
     }
   }
 
-  void _showAddProductDialog(BuildContext context, String nfcId) {
-    final TextEditingController nombreController = TextEditingController();
-    final TextEditingController cantidadController = TextEditingController();
-    final TextEditingController ubicacionController = TextEditingController();
+  // Mostrar un cuadro de diálogo para ingresar los datos del producto
+  Future<ProductModel?> _showAddProductDialog(
+      BuildContext context, String tagId) {
+    TextEditingController nombreController = TextEditingController();
+    TextEditingController cantidadController = TextEditingController();
+    TextEditingController ubicacionController = TextEditingController();
 
-    showDialog(
+    return showDialog<ProductModel>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Agregar Producto'),
+          title: Text("Agregar Producto"),
           content: Column(
-            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TextField(
                 controller: nombreController,
-                decoration: const InputDecoration(labelText: 'Nombre'),
+                decoration: InputDecoration(labelText: "Nombre"),
               ),
               TextField(
                 controller: cantidadController,
-                decoration: const InputDecoration(labelText: 'Cantidad'),
+                decoration: InputDecoration(labelText: "Cantidad"),
                 keyboardType: TextInputType.number,
               ),
               TextField(
                 controller: ubicacionController,
-                decoration: const InputDecoration(labelText: 'Ubicación'),
+                decoration: InputDecoration(labelText: "Ubicación"),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () {
-                final String nombre = nombreController.text;
-                final int cantidad = int.tryParse(cantidadController.text) ?? 0;
-                final String ubicacion = ubicacionController.text;
-
-                if (nombre.isNotEmpty && cantidad > 0 && ubicacion.isNotEmpty) {
-                  final nuevoProducto = ProductModel(
-                    id: nfcId,
-                    nombre: nombre,
-                    cantidad: cantidad,
-                    ubicacion: ubicacion,
-                  );
-                  Provider.of<InventarioViewModel>(context, listen: false)
-                      .addItem(nuevoProducto);
-                  Navigator.of(context).pop();
-                  Navigator.of(context)
-                      .pop(); // Volver a la pantalla de inventario
-                }
+                Navigator.of(context).pop(); // Cerrar diálogo sin agregar
               },
-              child: const Text('Agregar'),
+              child: Text("Cancelar"),
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                // Validar la cantidad antes de agregar el producto
+                if (nombreController.text.isEmpty ||
+                    cantidadController.text.isEmpty ||
+                    ubicacionController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('Todos los campos son obligatorios.')));
+                  return;
+                }
+
+                final product = ProductModel(
+                  etiquetaId: tagId, // Usar el ID del tag NFC
+                  nombre: nombreController.text,
+                  cantidad: int.tryParse(cantidadController.text) ?? 1,
+                  ubicacion: ubicacionController.text,
+                );
+                Navigator.of(context).pop(product);
               },
-              child: const Text('Cancelar'),
+              child: Text("Agregar"),
             ),
           ],
         );
