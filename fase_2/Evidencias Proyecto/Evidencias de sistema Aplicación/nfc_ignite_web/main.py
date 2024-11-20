@@ -1,12 +1,48 @@
 import flet as ft
+import pyrebase
+
+config = {
+    "apiKey": "AIzaSyDIIQ73ZI2rJh1vOHeblrAZqkU2GHoFV50",
+    "authDomain": "ignis-a2956.firebaseapp.com",
+    "projectId": "ignis-a2956",
+    "storageBucket": "ignis-a2956.firebasestorage.app",
+    "messagingSenderId": "1089434384807",
+    "appId": "1:1089434384807:web:9430756ba5eda03d731e82",
+    "measurementId": "G-9N06YMYJ4X",
+    "databaseURL": "",
+}
+
+firebase = pyrebase.initialize_app(config)
+auth = firebase.auth()
+
 
 def main(page: ft.Page):
     page.title = "NFC Ignite"
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
-    # Aquí irán los controles de la pantalla de login
-    
+    username_field = ft.TextField(label="Usuario", width=300)
+    password_field = ft.TextField(label="Contraseña", password=True, width=300)
+
+    def login(e):
+        email = username_field.value
+        password = password_field.value
+        try:
+            auth.sign_in_with_email_and_password(email, password)
+            mostrar_menu(e)  
+        except Exception as error:
+            print(f"Error logging in: {error}")
+            page.snackbar = ft.SnackBar(ft.Text("Usuario o contraseña incorrectos"), duration=3000)
+            page.snackbar.open = True
+            page.add(page.snackbar)
+            page.update()
+
+    def logout(e):
+        page.clean()
+        page.add(login_form)
+        page.update()
+
+
     def mostrar_consultas(e):  # <-- Nueva función para mostrar la pantalla de consultas
         page.clean()
         page.add(
@@ -84,20 +120,15 @@ def main(page: ft.Page):
         page.update()
         
     login_form = ft.Column(
-            [
-                ft.Image(src="assets/icon.png", width=200),
-                ft.TextField(label="Usuario", width=300),
-                ft.TextField(label="Contraseña", password=True, width=300),
-                ft.ElevatedButton("Iniciar sesión", on_click=mostrar_menu)
-            ]
-        )
-    page.add(login_form)
-    
-    def logout(e):
-        page.clean()
-        page.add(login_form)
-        page.update()
+        [
+            ft.Image(src="assets/icon.png", width=200),
+            username_field,
+            password_field,
+            ft.ElevatedButton("Iniciar sesión", on_click=login, width=300),
+        ]
+    )
 
+    page.add(login_form)
     page.update()
 
 ft.app(target=main, assets_dir="assets")
