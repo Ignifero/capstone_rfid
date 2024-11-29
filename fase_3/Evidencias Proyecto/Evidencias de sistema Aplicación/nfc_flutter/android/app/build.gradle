@@ -1,0 +1,56 @@
+plugins {
+    id "com.android.application"
+    // START: FlutterFire Configuration
+    id 'com.google.gms.google-services'
+    // END: FlutterFire Configuration
+    id "kotlin-android"
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+android {
+    namespace = "com.example.nfc_flutter"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8
+    }
+
+    defaultConfig {
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        applicationId "com.example.appNfcScan"  // Cambiado para que coincida con el archivo JSON
+        // You can update the following values to match your application needs.
+        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        minSdkVersion 26  // Cambiado a 26
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
+
+    signingConfigs {
+        release {
+            storeFile file("C:/proyectonfc/my-release-key.jks") // Ruta de tu archivo .jks
+            storePassword "12345678"  // Contraseña de tu keystore
+            keyAlias "my-key"  // Alias de tu clave
+            keyPassword "12345678"  // Contraseña de la clave
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release  // Usa la configuración de firma de release
+            minifyEnabled false  // Si deseas habilitar minificación, cambia a 'true'
+            shrinkResources false  // Si deseas habilitar la reducción de recursos, cambia a 'true'
+        }
+    }
+}
+
+flutter {
+    source = "../.."
+}
