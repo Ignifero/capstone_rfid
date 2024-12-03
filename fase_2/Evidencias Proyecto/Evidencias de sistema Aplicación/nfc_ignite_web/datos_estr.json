@@ -7,6 +7,10 @@
       "inventario2": {
         "id": "2",
         "nombre": "Inventario Sucursal"
+      },
+      "inventario3": {
+        "id": "3",
+        "nombre": "Inventario Bodega"
       }
     },
     "productos": {
@@ -20,6 +24,24 @@
         "id": "2",
         "nombre": "Banana",
         "cantidad": 20,
+        "inventarioId": "2" 
+      },
+      "producto3": {
+        "id": "3",
+        "nombre": "Pera",
+        "cantidad": 30,
+        "inventarioId": "3" 
+      },
+      "producto4": {
+        "id": "4",
+        "nombre": "Naranja",
+        "cantidad": 40,
+        "inventarioId": "1" 
+      },
+      "producto5": {
+        "id": "5",
+        "nombre": "Uva",
+        "cantidad": 50,
         "inventarioId": "2" 
       }
     }
