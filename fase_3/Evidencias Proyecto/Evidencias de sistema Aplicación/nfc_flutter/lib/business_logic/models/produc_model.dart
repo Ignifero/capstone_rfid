@@ -3,12 +3,14 @@ class ProductModel {
   final String etiquetaId;
   final int cantidad;
   final String ubicacion;
+  final String usuarioId; // Nuevo campo
 
   ProductModel({
     required this.nombre,
     required this.etiquetaId,
     required this.cantidad,
     required this.ubicacion,
+    required this.usuarioId, // Asegura que el modelo tenga este campo
   });
 
   // Convertir el mapa en un objeto ProductModel
@@ -18,6 +20,8 @@ class ProductModel {
       etiquetaId: map['etiquetaId'] ?? '',
       cantidad: map['cantidad'] ?? 0,
       ubicacion: map['ubicacion'] ?? 'Sin ubicación',
+      usuarioId:
+          map['usuarioId'] ?? '', // Incluir el usuarioId al construir el objeto
     );
   }
 
@@ -28,6 +32,7 @@ class ProductModel {
       'etiquetaId': etiquetaId,
       'cantidad': cantidad,
       'ubicacion': ubicacion,
+      'usuarioId': usuarioId, // Incluir el usuarioId al serializar
     };
   }
 }

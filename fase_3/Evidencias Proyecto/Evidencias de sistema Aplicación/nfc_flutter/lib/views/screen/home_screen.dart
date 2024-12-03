@@ -55,7 +55,16 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 111, 80, 252),
       appBar: AppBar(
-        title: Text(_titles[_currentIndex]),
+        title: Text(
+          _titles[_currentIndex],
+          style: TextStyle(
+            fontSize: 24.0, // Tamaño de fuente grande
+            fontWeight: FontWeight.bold, // Negrita
+            color: Color.fromARGB(255, 235, 240, 250), // Color vibrante
+            letterSpacing: 2.0, // Espaciado entre letras
+            fontFamily: 'Roboto', // Fuente moderna
+          ),
+        ),
         backgroundColor: const Color.fromARGB(255, 111, 80, 252),
         actions: [
           IconButton(

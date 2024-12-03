@@ -19,6 +19,7 @@ class InventarioViewModel extends ChangeNotifier {
   List<Map<String, dynamic>> scannedProducts = [];
   List<Map<String, dynamic>> matchedProducts = [];
   bool isTestingMode = true;
+  final usuarioId = FirebaseAuth.instance.currentUser?.uid;
 
   get productos => null; // Definir si estamos en modo de prueba
 
@@ -51,32 +52,52 @@ class InventarioViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> agregarProducto(
+  // Agregar producto y actualizar la lista local
+  Future<bool> agregarProducto(
       String inventarioId, ProductModel nuevoProducto) async {
     try {
       print('Iniciando agregarProducto...');
       print('Inventario ID: $inventarioId');
       print('Producto: ${nuevoProducto.toMap()}');
 
-      // Obtener usuario autenticado
+      // Validación de usuario autenticado
       User? user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         print('Usuario no autenticado.');
-        return;
+        return false; // Devolver false si no está autenticado
       }
-      print('Usuario autenticado: ${user.uid}');
+
+      // Obtener el usuarioId
+      String usuarioId = user.uid;
+
+      // Verificar si los datos del producto son válidos (nombre, cantidad, ubicación)
+      if (nuevoProducto.nombre.isEmpty ||
+          nuevoProducto.cantidad <= 0 ||
+          nuevoProducto.ubicacion.isEmpty) {
+        print('Datos del producto inválidos.');
+        return false; // Retorna false si los datos son inválidos
+      }
 
       // Generar un nuevo ID de producto automáticamente
       String idProducto =
           FirebaseFirestore.instance.collection('productos').doc().id;
 
-      // Crear datos del producto
+      // Crear datos del producto, incluyendo el usuarioId
       Map<String, dynamic> datosProducto = {
         'nombre': nuevoProducto.nombre,
         'cantidad': nuevoProducto.cantidad,
         'ubicacion': nuevoProducto.ubicacion,
         'etiquetaId': nuevoProducto.etiquetaId,
+        'usuarioId': usuarioId, // Aquí agregamos el usuarioId
       };
+
+      // Comprobar si el producto ya existe en el inventario
+      bool productoExistente = await checkIfProductExistsInSpecificInventario(
+          nuevoProducto.etiquetaId);
+      if (productoExistente) {
+        print('El producto ya existe en el inventario.');
+        return false; // Evitar agregar el producto si ya existe
+      }
 
       // Escribir en Firestore usando el ID generado automáticamente
       await FirebaseFirestore.instance
@@ -88,11 +109,14 @@ class InventarioViewModel extends ChangeNotifier {
 
       print('Producto agregado correctamente con ID: $idProducto');
 
-      // Actualizar productos después de agregar
-      await fetchProductosOnce(
-          inventarioId); // Llama al método que actualiza la lista
+      // Actualizar la lista de productos local
+      // Asegúrate de tener un método fetchProductosOnce que cargue todos los productos
+      await fetchProductosOnce(inventarioId);
+
+      return true; // Retorna true si se agregó correctamente
     } catch (e) {
       print('Error al agregar el producto: $e');
+      return false; // Retorna false si hubo un error
     }
   }
 
@@ -141,8 +165,10 @@ class InventarioViewModel extends ChangeNotifier {
         .collection('productos')
         .get();
 
-    // Actualizamos el valor de productosTotales
-    productosTotales = querySnapshot.docs.length;
+    // Si no hay productos, retornar una lista vacía
+    if (querySnapshot.docs.isEmpty) {
+      return []; // No hay productos en la base de datos
+    }
 
     print(
         "Datos recibidos de Firestore: ${querySnapshot.docs.length} documentos");
@@ -205,7 +231,8 @@ class InventarioViewModel extends ChangeNotifier {
             etiquetaId: "",
             nombre: "",
             cantidad: 0,
-            ubicacion: ""), // Producto vacío
+            ubicacion: "",
+            usuarioId: ""), // Producto vacío
       );
 
       if (existingProduct.etiquetaId.isNotEmpty) {
@@ -225,7 +252,7 @@ class InventarioViewModel extends ChangeNotifier {
         return null; // Retorna null si no se encuentra el producto
       }
     } catch (e) {
-      print('ERROR DURANTE EL ESCANEO NFC: $e');
+      print('ERROR, VERIFICA TU DISPOSITIVO Y COMPATIBILIDAD CON NFC: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: ${e.toString()}'),
@@ -240,85 +267,96 @@ class InventarioViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> scanNfcAndAddProduct(
+  Future<bool> scanNfcAndAddProduct(
       BuildContext context, String inventarioId) async {
     try {
-      isScanning = true;
+      isScanning = true; // Activar el spinner
       notifyListeners();
 
+      // Verificar disponibilidad de NFC
       final nfcAvailability = await FlutterNfcKit.nfcAvailability;
       if (nfcAvailability != NFCAvailability.available) {
-        // Control de notificaciones duplicadas
-        ScaffoldMessenger.of(context)
-            .clearSnackBars(); // Limpia cualquier SnackBar existente
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('DISPOSITIVO NO SOPORTA NFC .'),
+            content: Text('DISPOSITIVO NO SOPORTA NFC.'),
             backgroundColor: Colors.red,
           ),
         );
-        return;
+        return false;
       }
 
+      // Escanear la etiqueta NFC
       final nfcTag = await FlutterNfcKit.poll(timeout: Duration(seconds: 10));
       if (nfcTag.id.isEmpty) {
-        // Control de notificaciones duplicadas
-        ScaffoldMessenger.of(context)
-            .clearSnackBars(); // Limpia cualquier SnackBar existente
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('NO SE DETECTA ETIQUETA NFC.'),
             backgroundColor: Colors.red,
           ),
         );
-        return;
+        return false;
       }
 
       final etiquetaId = nfcTag.id;
       scannedData = etiquetaId;
 
-      final exists = await _firestoreService.checkIfProductExistsInInventory(
-          inventarioId, etiquetaId);
+      // Obtener usuario autenticado
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Usuario no autenticado.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return false; // Si el usuario no está autenticado, retornamos false
+      }
 
+      String usuarioId = user.uid; // Obtener el usuarioId
+
+      // Verificar si el producto ya existe en el inventario
+      final exists = await _firestoreService.checkIfProductExistsInInventory(
+          etiquetaId, usuarioId);
       if (exists != null) {
-        // Control de notificaciones duplicadas
-        ScaffoldMessenger.of(context)
-            .clearSnackBars(); // Limpia cualquier SnackBar existente
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('PRODUCTO YA EXISTE EN EL INVENTARIO'),
             backgroundColor: Colors.red,
           ),
         );
-      } else {
-        print('Producto no encontrado, agregando al inventario');
-        // Mostrar el cuadro de diálogo de agregar producto
-        _showAddProductDialog(context, inventarioId, etiquetaId);
+        return false; // Si el producto ya existe, retornar false
       }
+
+      // Mostrar cuadro de diálogo para capturar información del producto
+      await _showAddProductDialog(context, inventarioId, etiquetaId);
+      return true; // Procesado correctamente
     } catch (e) {
-      // Control de notificaciones duplicadas
-      ScaffoldMessenger.of(context)
-          .clearSnackBars(); // Limpia cualquier SnackBar existente
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('ERROR DURANTE EL ESCANEO NFC  $e.'),
+          content: Text('ERROR DURANTE EL ESCANEO NFC $e.'),
           backgroundColor: Colors.red,
         ),
       );
+      return false;
     } finally {
-      isScanning = false;
+      isScanning = false; // Desactivar spinner
       notifyListeners();
       await FlutterNfcKit.finish();
     }
   }
 
-  void _showAddProductDialog(
-      BuildContext context, String inventarioId, String etiquetaId) {
+  Future<void> _showAddProductDialog(
+      BuildContext context, String inventarioId, String etiquetaId) async {
     final nombreController = TextEditingController();
     final cantidadController = TextEditingController();
     final ubicacionController = TextEditingController();
 
-    showDialog(
+    await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Agregar nuevo producto'),
@@ -326,63 +364,157 @@ class InventarioViewModel extends ChangeNotifier {
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
-                controller: nombreController,
-                decoration: InputDecoration(labelText: 'Nombre del producto')),
+              controller: nombreController,
+              decoration: InputDecoration(labelText: 'Nombre del producto'),
+            ),
             TextField(
-                controller: cantidadController,
-                decoration: InputDecoration(labelText: 'Cantidad'),
-                keyboardType: TextInputType.number),
+              controller: cantidadController,
+              decoration: InputDecoration(labelText: 'Cantidad'),
+              keyboardType: TextInputType.number,
+            ),
             TextField(
-                controller: ubicacionController,
-                decoration: InputDecoration(labelText: 'Ubicación')),
+              controller: ubicacionController,
+              decoration: InputDecoration(labelText: 'Ubicación'),
+            ),
           ],
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancelar')),
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Cancelar'),
+          ),
           TextButton(
             onPressed: () async {
               final nombre = nombreController.text.trim();
-              final cantidad = int.tryParse(cantidadController.text) ?? 0;
+              final cantidadStr = cantidadController.text.trim();
               final ubicacion = ubicacionController.text.trim();
 
-              if (nombre.isEmpty || cantidad <= 0 || ubicacion.isEmpty) {
-                // Control de notificaciones duplicadas
-                ScaffoldMessenger.of(context)
-                    .clearSnackBars(); // Limpia cualquier SnackBar existente
+              // Validar campos vacíos
+              if (nombre.isEmpty || ubicacion.isEmpty) {
+                ScaffoldMessenger.of(context).clearSnackBars();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('POR FAVOR, COMPLETA TODOS LOS CAMPOS .'),
+                    content: Text('Por favor, completa todos los campos.'),
                     backgroundColor: Colors.red,
                   ),
                 );
                 return;
               }
 
-              final newProduct = ProductModel(
-                  etiquetaId: etiquetaId,
-                  nombre: nombre,
-                  cantidad: cantidad,
-                  ubicacion: ubicacion);
+              // Validar cantidad como número
+              int? cantidad;
+              try {
+                cantidad = int.parse(cantidadStr);
+                if (cantidad <= 0) throw FormatException();
+              } catch (_) {
+                ScaffoldMessenger.of(context).clearSnackBars();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Cantidad debe ser un número mayor a 0.'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
 
-              // Llamar al método agregarProducto en el ViewModel
-              await agregarProducto(inventarioId, newProduct);
+              // Obtener usuarioId de FirebaseAuth
+              final user = FirebaseAuth.instance.currentUser;
+              if (user == null) {
+                ScaffoldMessenger.of(context).clearSnackBars();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Usuario no autenticado.'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+              final usuarioId = user.uid;
 
-              // Control de notificaciones duplicadas
-              ScaffoldMessenger.of(context)
-                  .clearSnackBars(); // Limpia cualquier SnackBar existente
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('PRODUCTO AGREGADO CORRECTAMENTE .'),
-                  backgroundColor: Colors.green,
-                ),
+              // Crear modelo de producto
+              final nuevoProducto = ProductModel(
+                etiquetaId: etiquetaId,
+                nombre: nombre,
+                cantidad: cantidad,
+                ubicacion: ubicacion,
+                usuarioId: usuarioId,
               );
-              Navigator.of(context).pop();
+
+              // Intentar agregar el producto
+              final agregado =
+                  await agregarProducto(inventarioId, nuevoProducto);
+
+              Navigator.of(context).pop(); // Cierra el diálogo
+
+              // Notificar resultado
+              if (agregado) {
+                print("producto agregado correctamente");
+              } else {
+                ScaffoldMessenger.of(context).clearSnackBars();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                        'No se pudo agregar el producto, verifica los datos.'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
             child: Text('Agregar'),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> savePickingData(
+    String tableName,
+    List<ProductModel> scannedProducts,
+    String userId,
+  ) async {
+    if (scannedProducts.isEmpty) {
+      // Si la lista está vacía, no guardar y mostrar un mensaje
+      print('No se han escaneado productos.');
+      return;
+    }
+
+    try {
+      // Obtener la referencia del documento de inventario
+      final collectionRef =
+          FirebaseFirestore.instance.collection('inventarios');
+      final tableRef =
+          collectionRef.doc(tableName); // Seleccionar el documento de la tabla
+
+      // Crear un nuevo documento en la subcolección 'pickings'
+      final pickingRef = tableRef
+          .collection('pickings')
+          .doc(); // Doc nuevo generado automáticamente
+
+      // Crear el objeto para guardar los datos
+      final pickingData = {
+        'productos': scannedProducts.map((product) => product.toMap()).toList(),
+        'fecha': Timestamp.now(),
+        'usuarioId': userId,
+      };
+
+      // Guardar el documento en Firestore
+      await pickingRef.set(pickingData);
+      print('Picking guardado correctamente en Firestore');
+    } catch (e) {
+      print('Error al guardar el picking: $e');
+    }
+  }
+}
+
+class Notificacion {
+  static void show(BuildContext context, String message,
+      {Color color = Colors.blue}) {
+    ScaffoldMessenger.of(context)
+        .clearSnackBars(); // Limpia los SnackBars activos
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
       ),
     );
   }

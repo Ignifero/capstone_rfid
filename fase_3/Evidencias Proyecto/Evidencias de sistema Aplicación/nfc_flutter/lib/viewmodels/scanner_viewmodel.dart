@@ -7,50 +7,41 @@ class ScannerViewModel extends ChangeNotifier {
 
   bool isScanning = false;
 
-  ScannerViewModel(firestoreService);
+  ScannerViewModel(param0);
 
-  // Método para verificar si un producto existe
+  // Método para verificar si el producto existe en el inventario con el usuarioId
   Future<Map<String, dynamic>?> checkIfProductExistsInInventory(
-      String etiquetaId) async {
+      String etiquetaId, String usuarioId) async {
     try {
       final inventoryRef = _firestore.collection('inventarios');
-
-      // Obtener todos los documentos en la colección 'inventarios'
       final querySnapshot = await inventoryRef.get();
 
       for (var doc in querySnapshot.docs) {
         final productosRef = doc.reference.collection('productos');
 
-        // Buscar en la subcolección 'productos' si el etiquetaId coincide
-        final productoSnapshot =
-            await productosRef.where('etiquetaId', isEqualTo: etiquetaId).get();
+        final productoSnapshot = await productosRef
+            .where('etiquetaId', isEqualTo: etiquetaId.trim())
+            .where('usuarioId', isEqualTo: usuarioId)
+            .get();
 
         if (productoSnapshot.docs.isNotEmpty) {
           final productData = productoSnapshot.docs.first.data();
-
-          return productData; // Devuelve los detalles del producto
+          productData['inventarioId'] =
+              doc.id; // Agregar referencia del inventario
+          return productData;
         }
       }
 
-      return null; // Si no se encuentra en ninguna subcolección
+      return null; // No encontrado en ninguna subcolección
     } catch (e) {
       print('Error al verificar el producto: $e');
       return null;
     }
   }
 
-/*
-  // Simulación de la función poll de FlutterNfcKit
-  Future<MockNfcTag> mockPoll() async {
-    print('Simulando escaneo NFC...');
-    await Future.delayed(
-        Duration(seconds: 2)); // Simulamos el tiempo de escaneo
-    return MockNfcTag(
-        id: '046BA6A2A51C90'); // ID ficticio de la etiqueta que sabemos que está en el inventario
-  }
-*/
   // Método de escaneo y validación en Firestore
-  Future<void> scanNfcAndCheckProduct(BuildContext context) async {
+  Future<void> scanNfcAndCheckProduct(
+      BuildContext context, String usuarioId) async {
     try {
       print('--- Iniciando proceso de escaneo NFC ---');
       isScanning = true;
@@ -76,8 +67,9 @@ class ScannerViewModel extends ChangeNotifier {
       final etiquetaId = nfcTag.id;
       print('Etiqueta NFC escaneada con éxito. ID: $etiquetaId');
 
-      // Llamamos al método de Firestore para verificar si el producto existe en la base de datos
-      final exists = await checkIfProductExistsInInventory(etiquetaId);
+      // Llamamos al método de Firestore para verificar si el producto existe en el inventario
+      final exists =
+          await checkIfProductExistsInInventory(etiquetaId, usuarioId);
       if (exists != null) {
         // Producto encontrado
         ScaffoldMessenger.of(context).clearSnackBars();

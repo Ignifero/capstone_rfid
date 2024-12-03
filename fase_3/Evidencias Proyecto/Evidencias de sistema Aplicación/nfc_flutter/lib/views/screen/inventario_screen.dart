@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:nfc_flutter/business_logic/models/produc_model.dart';
 import 'package:nfc_flutter/viewmodels/inventario_viewmodel.dart';
@@ -12,12 +11,12 @@ class InventarioScreen extends StatefulWidget {
 
 class _InventarioScreenState extends State<InventarioScreen> {
   final TextEditingController _searchController = TextEditingController();
-  final ValueNotifier<bool> isFlashing = ValueNotifier<bool>(false);
+  bool isLoading =
+      true; // Esta variable controla el estado de la carga de datos
 
   @override
   void dispose() {
     _searchController.dispose();
-    isFlashing.dispose();
     super.dispose();
   }
 
@@ -27,20 +26,42 @@ class _InventarioScreenState extends State<InventarioScreen> {
       create: (context) => InventarioViewModel()..fetchTables(),
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Selecciona una tabla'),
+          title: Text('Selecciona tu inventario'),
         ),
         body: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Consumer<InventarioViewModel>(
             builder: (context, viewModel, child) {
-              if (viewModel.isLoading) {
+              // Si los datos están cargando, mostrar un spinner por un tiempo breve
+              if (isLoading) {
+                Future.delayed(Duration(seconds: 2), () {
+                  setState(() {
+                    isLoading = false;
+                  });
+                });
                 return Center(child: CircularProgressIndicator());
               }
 
+              // Si no hay inventarios cargados, mostrar el botón para crear tabla
               if (viewModel.inventarios.isEmpty) {
-                return Center(child: Text('No hay inventarios disponibles.'));
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('No hay inventarios disponibles.'),
+                      SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () async {
+                          _showCreateTableDialog(context, viewModel);
+                        },
+                        child: Text('+ Crear Tabla'),
+                      ),
+                    ],
+                  ),
+                );
               }
 
+              // Si hay inventarios, mostrar la pantalla normal
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -49,7 +70,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
                       Expanded(
                         child: DropdownButton<String>(
                           value: viewModel.selectedTableName,
-                          hint: Text('Selecciona una tabla'),
+                          hint: Text('Seleccionar Inventario'),
                           items: viewModel.inventarios.map((inventario) {
                             return DropdownMenuItem<String>(
                               value: inventario.nombre,
@@ -72,61 +93,87 @@ class _InventarioScreenState extends State<InventarioScreen> {
                         child: Text('+ Tabla'),
                       ),
                       SizedBox(width: 8),
-                      // Botón que parpadea intermitentemente
-                      AnimatedBuilder(
-                        animation: isFlashing,
-                        builder: (context, child) {
-                          return ElevatedButton(
-                            onPressed: () async {
-                              if (viewModel.selectedTableName != null) {
-                                // Inicia el parpadeo
-                                isFlashing.value = true;
-
-                                // Temporizador para alternar el color
-                                Timer.periodic(Duration(milliseconds: 500),
-                                    (timer) {
-                                  if (!isFlashing.value) {
-                                    timer.cancel(); // Detiene el temporizador
-                                  } else {
-                                    setState(() {}); // Fuerza el redibujado
-                                  }
-                                });
-
-                                // Llama al método que maneja el escaneo NFC
-                                await context
-                                    .read<InventarioViewModel>()
-                                    .scanNfcAndAddProduct(
-                                      context,
-                                      viewModel.selectedTableName!,
-                                    );
-
-                                // Detiene el parpadeo después de la ejecución
-                                isFlashing.value = false;
-                              } else {
-                                // Control de notificaciones duplicadas
-                                ScaffoldMessenger.of(context)
-                                    .clearSnackBars(); // Limpia cualquier SnackBar existente
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                        'DEBES SELECCIONAR UNA TABLA PRIMERO .'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Selector<InventarioViewModel, bool>(
+                            selector: (_, viewModel) => viewModel.isScanning,
+                            builder: (_, isScanning, __) {
+                              if (isScanning) {
+                                return CircularProgressIndicator();
                               }
+                              return IconButton(
+                                onPressed: () async {
+                                  if (viewModel.selectedTableName != null) {
+                                    try {
+                                      bool productAdded = await context
+                                          .read<InventarioViewModel>()
+                                          .scanNfcAndAddProduct(
+                                            context,
+                                            viewModel.selectedTableName!,
+                                          );
+
+                                      if (productAdded) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                                'PRODUCTO AGREGADO CORRECTAMENTE'),
+                                            backgroundColor: Colors.green,
+                                          ),
+                                        );
+                                      } else {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                                'ERROR AL AGREGAR EL PRODUCTO'),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      ScaffoldMessenger.of(context)
+                                          .clearSnackBars();
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                              'ERROR DURANTE EL ESCANEO, DISPOSITIVO INCOMPATIBLE'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
+                                  } else {
+                                    ScaffoldMessenger.of(context)
+                                        .clearSnackBars();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                            'DEBES SELECCIONAR UNA TABLA PRIMERO'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                },
+                                icon: const Icon(
+                                  Icons.nfc,
+                                  size: 20.0,
+                                  color: Colors.blue,
+                                ),
+                              );
                             },
-                            child: Text('+ Producto'),
-                            style: ElevatedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 6),
-                              textStyle: TextStyle(fontSize: 12),
-                              backgroundColor: isFlashing.value
-                                  ? Colors.green
-                                  : Colors.blue, // Alterna entre verde y azul
+                          ),
+                          const Text(
+                            'Agregar',
+                            style: TextStyle(
+                              fontSize: 16.0,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        ],
+                      )
                     ],
                   ),
                   SizedBox(height: 8),
@@ -138,7 +185,8 @@ class _InventarioScreenState extends State<InventarioScreen> {
                       border: OutlineInputBorder(),
                     ),
                     onChanged: (value) {
-                      setState(() {});
+                      setState(
+                          () {}); // Actualiza la búsqueda al cambiar el texto
                     },
                     style: TextStyle(fontSize: 14),
                   ),
@@ -160,7 +208,6 @@ class _InventarioScreenState extends State<InventarioScreen> {
                           );
                         }
 
-                        // Filtra los productos según el texto de búsqueda
                         final filteredProducts = snapshot.data
                                 ?.where((product) => product.nombre
                                     .toLowerCase()
@@ -199,7 +246,6 @@ class _InventarioScreenState extends State<InventarioScreen> {
     );
   }
 
-  // Método para mostrar el cuadro de diálogo para crear una tabla
   void _showCreateTableDialog(
       BuildContext context, InventarioViewModel viewModel) {
     final tableNameController = TextEditingController();
@@ -223,7 +269,6 @@ class _InventarioScreenState extends State<InventarioScreen> {
               if (tableName.isNotEmpty) {
                 await viewModel.createNewTable("inventarios", tableName);
 
-                // Mostrar notificación de éxito
                 ScaffoldMessenger.of(context).clearSnackBars();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -231,11 +276,10 @@ class _InventarioScreenState extends State<InventarioScreen> {
                     backgroundColor: Colors.green,
                   ),
                 );
-
-                // Cerrar el diálogo después de crear la tabla
                 Navigator.of(context).pop();
+                // Refrescar inventarios después de crear una nueva tabla
+                await viewModel.fetchTables();
               } else {
-                // Mostrar notificación de error
                 ScaffoldMessenger.of(context).clearSnackBars();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -247,87 +291,6 @@ class _InventarioScreenState extends State<InventarioScreen> {
               }
             },
             child: Text('Crear'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Método para mostrar el cuadro de diálogo para agregar un producto
-  void _showAddProductDialog(
-      BuildContext context, InventarioViewModel viewModel, String etiquetaId) {
-    final nombreController = TextEditingController();
-    final cantidadController = TextEditingController();
-    final ubicacionController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Agregar nuevo producto'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nombreController,
-              decoration: InputDecoration(labelText: 'Nombre del producto'),
-            ),
-            TextField(
-              controller: cantidadController,
-              decoration: InputDecoration(labelText: 'Cantidad'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: ubicacionController,
-              decoration: InputDecoration(labelText: 'Ubicación'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final nombre = nombreController.text.trim();
-              final cantidad = int.tryParse(cantidadController.text) ?? 0;
-              final ubicacion = ubicacionController.text.trim();
-
-              if (nombre.isEmpty || cantidad <= 0 || ubicacion.isEmpty) {
-                // Control de notificaciones duplicadas
-                ScaffoldMessenger.of(context)
-                    .clearSnackBars(); // Limpia cualquier SnackBar existente
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('POR FAVOR COMPLETA TODOS LOS CAMPOS.'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                return;
-              }
-
-              // Agregar el producto utilizando el viewModel
-              await viewModel.agregarProducto(
-                viewModel.selectedTableName!, // ID de la tabla o inventario
-                ProductModel(
-                  etiquetaId: etiquetaId, // Usamos el ID de la etiqueta NFC
-                  nombre: nombre,
-                  cantidad: cantidad,
-                  ubicacion: ubicacion,
-                ),
-              );
-
-              // Control de notificaciones duplicadas
-              ScaffoldMessenger.of(context)
-                  .clearSnackBars(); // Limpia cualquier SnackBar existente
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('PRODUCTO CREADO CORRECTAMENTE .'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            child: Text('Agregar'),
           ),
         ],
       ),

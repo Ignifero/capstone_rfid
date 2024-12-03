@@ -56,7 +56,8 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ScannerViewModel(null)),
+        ChangeNotifierProvider(
+            create: (_) => ScannerViewModel(FirebaseFirestore.instance)),
 
         // Proveedor para AuthService
         Provider(create: (_) => AuthService()),
