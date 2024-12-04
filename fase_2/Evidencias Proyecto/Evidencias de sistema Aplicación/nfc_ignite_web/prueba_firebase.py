@@ -1,13 +1,12 @@
 import pyrebase
 
 config = {
-  "apiKey": "AIzaSyDIIQ73ZI2rJh1vOHeblrAZqkU2GHoFV50",
-  "authDomain": "ignis-a2956.firebaseapp.com",
-  "projectId": "ignis-a2956",
-  "storageBucket": "ignis-a2956.firebasestorage.app",
-  "messagingSenderId": "1089434384807",
-  "appId": "1:1089434384807:web:9430756ba5eda03d731e82",
-  "measurementId": "G-9N06YMYJ4X",
+  "apiKey": 'AIzaSyAWVsYA-_yiJL5B7x0uAkXcpoXuM3jwFTU',
+  "authDomain": 'nfc-scanner-316c4.firebaseapp.com',
+  "projectId": 'nfc-scanner-316c4',
+  "storageBucket": 'nfc-scanner-316c4.appspot.com',
+  "messagingSenderId": '1065241435557',
+  "appId": '1:1065241435557:web:fb6be93cc71a173421dc4c',
   "databaseURL": ""
 }
 

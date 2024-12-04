@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "nfc-scanner-316c4",
+  "private_key_id": "e1868466247ac4ef939161176d27656af4d62c85",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCkj8agbDf3AE1V\nd7Ir2g++NGXa5OwWMN5dB+hR+SUv6nPkxjaaYxQfRmBuWULqG84kx7hCphMUd8zK\nrALHF16DkZUaiYTe+/MQBENt21wFj9wh97eb2UvKCYYOmsYd5wfwc1sIZXtsQIeP\n/K0X9jcF/yf6D4O/5q452l1awtas3gszDz6MX6vOu6lAsHV7lHJ05FVIPIK6M6+l\nZJkyzT7dsdC626gdh292guu+4fyhXtYPGwiXzLgt+bt3dYku1WnwVKQ0eOHu3pyl\n+ae4v3AUTSk4HVFY48Ywcgs6m/SvKcUUKnsMdOUtY8D4r6DiBQ3lBGaQhgR4VOKh\nOHQF5O4pAgMBAAECggEAC1+agUTpe0tMjP8oU8qO8vzpGz9eJ8x52eEth9jZ3p1s\nJCAk7vexENZK3OWTb927GiSpkgWrZOtAvrMzv/HYCOzbasmdYtH0AyPgSyvxiLrg\nIoLd8EoM6GpPFxxQXAm3LUGzxXlKFfnBxMxYZEMSm3n+l9RRrUYyvXHfqOG1d54G\nprsRSDEqBS3LXDG2+2NliblMA0JiX4FF+szR7v3xDswyNj3WKoO4eYSc/VAq47hx\nsnAEUtDOerY9RmKjqnkwosnTaMsO+hRBV8L0rCpL6oelqdVYKGaEhIaeXVUujwbd\ni4w7DZSs9/K98buOa43aH8E/FJDTJhp/dw4+IYNE5wKBgQDa/gKoOdmDtLJfENxD\n1F5kZJNBR/HcbPaOd8Tf1+6I4I1MDn1uvjLVjM0X8o+pb8puKFCgBtqDl+maxW82\nr3qnkW5pcih7cIg1D2fyDbQmG0mx76dz6k67l2wD+g91DZ7FNDTZtYt9IKrH1ZXt\nPoaix4Dglbw5CB9QdBm+pL6VwwKBgQDAXwBvXdStS8+qxwLlfSPcNS0QA28nK30x\nrWxdJ+W+n2R/HBonJ1PBCdYDnek+8CtJTbLTVsDKq3FeSxwM+TdfYUZ4Gl8brwPV\n8HkZgELtPGE/TX13marj78zAzgL+15Qt/63RZAoSP2+XFEOocRehMoSFkP3ATulh\nXp5JyEXxowKBgQCUFQd+8f9fzCSBnEkVpNlfUZMxpZCq2ROwKtT5+G3YKN/i+jlf\nVUXSma9l7iOvE2TzMFe0nm3MZkEU40Tc2bQ682CR9RvivKmeF5jWWOXkjrc6ly/I\ndjxfJXlpBwLEyD0AZNkIDncQWbKiBo+nKYypLfa75wSsHA3wvVFbVNN7OQKBgQCV\nspgNEdBplsAgnkNjwDECsKLDflil+5Kt8M2N5HlFEJZMz9qOM21an8PaBq02XADj\nR0JscWsPi8Bp5zsJ4Xm0kGcdGTB/w37RohMqxAPQxxbKAwwq4Pr562bDds0f8TSP\nYxKpChdIQfMddxh7YJ5Jw50ar0y3tPCp4857jgzXzwKBgFDH/cYDlLb6Flq46njK\n+yz2yqDP95eJhuyWevaU9VADrBxOc/YK/KTz15CiXIeDAVZrbMmEVpqV/bkeiGbT\nj5k+fNBLhUqv1JYdvycphVdW8//VPCcYcRZkfntQt4qEGJND1XL8drL6G8qvIyio\nuiKWV3pnaMaB9wiDFgl+ZeOO\n-----END PRIVATE KEY-----\n",
+  "client_email": "app-web@nfc-scanner-316c4.iam.gserviceaccount.com",
+  "client_id": "116793042063013572616",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/app-web%40nfc-scanner-316c4.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
