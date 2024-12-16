@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   // Credenciales para la Web
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAWVsYA-_yiJL5B7xOuAkXcpoXuM3jwFTU',
+    apiKey: 'apykey',
     authDomain: 'nfc-scanner-316c4.firebaseapp.com',
     projectId: 'nfc-scanner-316c4',
     storageBucket: 'nfc-scanner-316c4.appspot.com',
@@ -61,7 +61,7 @@ class DefaultFirebaseOptions {
 
   // Credenciales para Android
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDiFmnIZ6SZLzgpO4COy3F_ou4iymBc5_0',
+    apiKey: 'apykey',
     appId: '1:1065241435557:android:ae82e6d1b878405421dc4c',
     messagingSenderId: '1065241435557',
     projectId: 'nfc-scanner-316c4',
